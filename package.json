@@ -1,5 +1,28 @@
 {
-  "dependencies": {
-    "@types/screeps": "^3.3.8"
+  "name": "screeps-hivemind",
+  "version": "0.0.0",
+  "author": "Romaner811",
+  "description": "",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Romaner811/screeps-hivemind.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Romaner811/screeps-hivemind/issues"
+  },
+  "homepage": "https://github.com/Romaner811/screeps-hivemind#readme",
+  "keywords": [
+    "screeps",
+    "world"
+  ],
+  "license": "ISC",
+  "devDependencies": {
+    "@types/screeps": "^3.3.8",
+    "grunt": "^1.6.1",
+    "grunt-screeps": "^1.5.0"
   }
 }

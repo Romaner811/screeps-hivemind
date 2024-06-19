@@ -5,7 +5,7 @@ const BRANCH_MAIN = "default";
 
 const DEFAULT_BRANCH = BRANCH_DEV;
 
-const FILE_SCREEPS_AUTH = "screeps.secret";
+const FILE_SCREEPS_AUTH = "screeps.auth.secret";
 
 const TASK_SCREEPS = "_screeps";
 const CFGKEY_SCREEPS_BRANCH = TASK_SCREEPS + ".options.branch";

@@ -32,14 +32,18 @@ Task and agenda oriented code for screeps world.
     * branch - where to deploy.
 3. grunt will create a screepsified version at `./dist/` and upload it to the account specified in the secret file.
 
-### available `grunt` tasks:
+### Available tasks:
+> ##### note:
+> $ `grunt --help`
+> will print a more up-to-date version.
+
 ##### flags:
 - `verbose` - config flag, make all tasks be verbose.
 - `dry` - config flag, dont produce any side effcts.
 - `force` - config flag, allow uploading a failed build.
 ##### build:
 - `build` - equivalent to all build tasks. "built" code is stored in `./dist/`.
-    - `screepsify`: ***!!! not-implemented !!!***
+    - `screepsify`: rearrange the code for screeps ***!!! not-implemented !!!***
         - flatten folder modules.
         - replace extension: `*.cjs` -> `*.js`.
         - update `require()`s in all files.

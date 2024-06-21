@@ -10,7 +10,7 @@ const CFGTASK_DRY = "dry";
 const CFGTASK_VERBOSE = "verbose";
 const CFGTASK_FORCE = "force";
 // config
-const TASK_BRANCH = "branch";
+const CFGTASK_BRANCH = "branch";
 // build
 const TASK_BUILD = "build";
 const TASK_SCREEPSIFY = "screepsify";
@@ -24,10 +24,10 @@ const CFGKEY_VERBOSE = "is_verbose";
 const CFGKEY_FORCE = "force";
 const CFGKEY_SCREEPS_BRANCH = TASK_UPLOAD + ".options.branch";
 
-const FILE_SCREEPS_AUTH = "screeps.auth.secret";
+const FILE_SCREEPS_AUTH = "./screeps.auth.secret";
 
-const DIR_SOURCE = "src";
-const DIR_DIST = "dist";
+const DIR_SOURCE = "./src/";
+const DIR_DIST = "./dist/";
 
 const DIR_SCREEPSIFIED_CODE = DIR_DIST;
 
@@ -60,8 +60,8 @@ module.exports = function(grunt) {
             dist: {
                 files: [
                     {
-                        src: [ DIR_SOURCE + "/**" ],
-                        dest: DIR_SCREEPSIFIED_CODE + "/",
+                        src: [ DIR_SOURCE + "**" ],
+                        dest: DIR_SCREEPSIFIED_CODE,
                         filter: "isFile"
                     }
                 ]
@@ -76,113 +76,143 @@ module.exports = function(grunt) {
                 //server: "season"  //3?
             },
             dist: {
-                src: [ DIR_DIST + "/*.js" ]
+                src: [ DIR_DIST + "*.js" ]
             }
         }
     });
 
-    grunt.task.registerTask(CFGTASK_DRY, function()
-    {
-        grunt.config.set(CFGKEY_DRY, true);
-    });
+    grunt.task.registerTask(
+        CFGTASK_DRY,
+        "config flag, make all tasks be verbose.",
+        function()
+        {
+            grunt.config.set(CFGKEY_DRY, true);
+        });
 
-    grunt.task.registerTask(CFGTASK_VERBOSE, function()
-    {
-        grunt.config.set(CFGKEY_VERBOSE, true);
-    });
+    grunt.task.registerTask(
+        CFGTASK_VERBOSE,
+        "config flag, dont produce any side effcts.",
+        function()
+        {
+            grunt.config.set(CFGKEY_VERBOSE, true);
+        });
     
-    grunt.task.registerTask(CFGTASK_FORCE, function()
-    {
-        grunt.config.set(CFGKEY_FORCE, true);
-    });
-
-    grunt.task.registerTask(TASK_BRANCH, function(branch)
-    {
-        if (branch == null)
+    grunt.task.registerTask(
+        CFGTASK_FORCE,
+        "config flag, allow uploading a failed build.",
+        function()
         {
-            branch = DEFAULT_BRANCH;
-        }
-
-        grunt.config.set(CFGKEY_SCREEPS_BRANCH, branch);
-        
-        if (grunt.config.get(CFGKEY_VERBOSE))
-        {
-            grunt.log.writeln(CFGKEY_SCREEPS_BRANCH + " = " + JSON.stringify(branch) + ";");
-        }
-    });
+            grunt.config.set(CFGKEY_FORCE, true);
+        });
 
     let build_tasks =  [ ];
-    grunt.task.registerTask(TASK_BUILD, function() {
-        grunt.log.writeln("build_tasks:", JSON.stringify(build_tasks));
-        grunt.task.exists(build_tasks);
-        grunt.task.run(build_tasks);
-    });
+    grunt.task.registerTask(
+        TASK_BUILD,
+        `equivalent to all build tasks. \"built\" code is stored in \`${DIR_DIST}\`.`,
+        function()
+        {
+            grunt.log.writeln("build_tasks:", JSON.stringify(build_tasks));
+            grunt.task.exists(build_tasks);
+            grunt.task.run(build_tasks);
+        });
 
-    grunt.task.registerTask(TASK_SCREEPSIFY, function()
-    {
-        log_verbose_config(grunt, this);
+    grunt.task.registerTask(
+        TASK_SCREEPSIFY,
+        "rearrange the code for screeps ***!!! not-implemented !!!***\n" +
+        "    - flatten folder modules.\n" +
+        "    - replace extension: \`*.cjs\` -> \`*.js\`.\n" +
+        "    - update \`require()\`s in all files.`\n",
+        function()
+        {
+            log_verbose_config(grunt, this);
 
-        throw new Error("not implemented: task " + TASK_SCREEPSIFY);
-        // TODO:
-        // cjs -> js
-        // flatten folders
-        // replace require paths
-    });
+            throw new Error("not implemented: task " + TASK_SCREEPSIFY);
+            // TODO:
+            // cjs -> js
+            // flatten folders
+            // replace require paths
+        });
     build_tasks.push(TASK_SCREEPSIFY);
     
-    grunt.task.loadNpmTasks("grunt-screeps");
-    grunt.task.registerTask(TASK_UPLOAD, function()
-    {
-        log_verbose_config(grunt, this);
-        
-        try
+    grunt.task.registerTask(
+        CFGTASK_BRANCH,
+        `config, set target branch for \`upload\`. (default: \`${DEFAULT_BRANCH}\`)`,
+        function(branch)
         {
-            grunt.task.requires(build_tasks);
-        }
-        catch (error)
-        {
-            if (grunt.config.get(CFGKEY_FORCE) || grunt.config.get(CFGKEY_DRY))
+            if (branch == null)
             {
-                grunt.log.writeln("[warning]: " + error.message);
+                branch = DEFAULT_BRANCH;
+            }
+
+            grunt.config.set(CFGKEY_SCREEPS_BRANCH, branch);
+            
+            if (grunt.config.get(CFGKEY_VERBOSE))
+            {
+                grunt.log.writeln(CFGKEY_SCREEPS_BRANCH + " = " + JSON.stringify(branch) + ";");
+            }
+        });
+
+    grunt.task.loadNpmTasks("grunt-screeps");
+    grunt.task.registerTask(
+        TASK_UPLOAD,
+        `upload the code currently in \`${DIR_DIST}\` onto the set branch ` +
+        `(default: \`${DEFAULT_BRANCH}\`).` +
+        `note: requires \`${FILE_SCREEPS_AUTH}\`.`,
+        function()
+        {
+            log_verbose_config(grunt, this);
+            
+            try
+            {
+                grunt.task.requires(build_tasks);
+            }
+            catch (error)
+            {
+                if (grunt.config.get(CFGKEY_FORCE) || grunt.config.get(CFGKEY_DRY))
+                {
+                    grunt.log.writeln("[warning]: " + error.message);
+                }
+                else
+                {
+                    throw error;
+                }
+            }
+            
+            const options = this.options({ });
+            grunt.log.writeln("will upload to: " + options.email + "/" + options.branch);
+            
+            if (grunt.config.get(CFGKEY_DRY))
+            {
+                grunt.log.writeln("dry run: did not upload.");
+                return;
+            }
+            
+            grunt.task.renameTask("screeps", TASK_UPLOAD);
+            grunt.task.run(TASK_UPLOAD);
+        });
+
+    grunt.task.registerTask(
+        TASK_DEPLOY,
+        `\`build\` then \`upload\`. equivalent to: \`build branch:<branch> upload\`.`,
+        function(branch)
+        {
+            let tasks = [ TASK_BUILD ];
+            
+            if (branch != null)
+            {
+                tasks.push(CFGTASK_BRANCH + ARG_DELIM + branch);
             }
             else
             {
-                throw error;
+                grunt.log.writeln(
+                    "[warning] no branch specified,",
+                    "will use default branch:", DEFAULT_BRANCH
+                    );
             }
-        }
-        
-        const options = this.options({ });
-        grunt.log.writeln("will upload to: " + options.email + "/" + options.branch);
-        
-        if (grunt.config.get(CFGKEY_DRY))
-        {
-            grunt.log.writeln("dry run: did not upload.");
-            return;
-        }
-        
-        grunt.task.renameTask("screeps", TASK_UPLOAD);
-        grunt.task.run(TASK_UPLOAD);
-    });
-
-    grunt.task.registerTask(TASK_DEPLOY, function(branch)
-    {
-        let tasks = [ TASK_BUILD ];
-        
-        if (branch != null)
-        {
-            tasks.push(TASK_BRANCH + ARG_DELIM + branch);
-        }
-        else
-        {
-            grunt.log.writeln(
-                "[warning] no branch specified,",
-                "will use default branch:", DEFAULT_BRANCH
-                );
-        }
-        tasks.push(TASK_UPLOAD);
-        
-        grunt.log.writeln("deploy will run tasks:", JSON.stringify(tasks));
-        
-        grunt.task.run(tasks);
-    });
+            tasks.push(TASK_UPLOAD);
+            
+            grunt.log.writeln("deploy will run tasks:", JSON.stringify(tasks));
+            
+            grunt.task.run(tasks);
+        });
 };

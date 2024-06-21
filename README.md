@@ -33,18 +33,26 @@ Task and agenda oriented code for screeps world.
 3. grunt will create a screepsified version at `./dist/` and upload it to the account specified in the secret file.
 
 ### available `grunt` tasks:
-- `verbose` - flag, make all tasks be verbose.
-- `dry` - flag, dont produce any side effects.
-- `force` - flag, allow uploading a failed build.
-
-- `build` - equivalent to all build tasks: `screepsify`; "built" code is stored in `./dist/`.
-- `screepsify`: ***!!! not-implemented !!!***
-    - flatten folder modules.
-    - replace extension: `*.cjs` -> `*.js`.
-    - update `require()`s in all files.
-
-- `branch:<branch>` - set target branch for `upload`.
+##### flags:
+- `verbose` - config flag, make all tasks be verbose.
+- `dry` - config flag, dont produce any side effcts.
+- `force` - config flag, allow uploading a failed build.
+##### build:
+- `build` - equivalent to all build tasks. "built" code is stored in `./dist/`.
+    - `screepsify`: ***!!! not-implemented !!!***
+        - flatten folder modules.
+        - replace extension: `*.cjs` -> `*.js`.
+        - update `require()`s in all files.
+##### upload:
+- `branch:<branch>` - config, set target branch for `upload`.
 - `upload` - upload the code currently in `./dist/` onto the set branch (default: `dev`).
+- `deploy:<branch>` - `build` then `upload`. equivalent to: `build branch:<branch> upload`.
 
-- `deploy:<branch>` - equivalent to: `build branch:<branch> upload`.
+### examples:
+- $ `grunt dry upload`
+    write the default branch.
+- $ `grunt dry verbose build`
+    output the verbose logs for build but without actually building.
+- $ `grunt branch:something upload`
+    upload any built code from `./dist/` into branch `something`.
 

@@ -36,6 +36,7 @@ Task and agenda oriented code for screeps world.
 > ##### note:
 > $ `grunt --help`
 > will print a more up-to-date version.
+> note: dont use `screeps` task directly, see `upload` instead.
 
 ##### flags:
 - `verbose` - config flag, make all tasks be verbose.
@@ -50,6 +51,7 @@ Task and agenda oriented code for screeps world.
 ##### upload:
 - `branch:<branch>` - config, set target branch for `upload`.
 - `upload` - upload the code currently in `./dist/` onto the set branch (default: `dev`).
+    _**note:** use this instead of `screeps` task._
 - `deploy:<branch>` - `build` then `upload`. equivalent to: `build branch:<branch> upload`.
 
 ### examples:

@@ -118,7 +118,7 @@ module.exports = function(grunt) {
 
     grunt.task.registerTask(
         TASK_SCREEPSIFY,
-        "rearrange the code for screeps ***!!! not-implemented !!!***\n" +
+        "rearrange the code for screeps\n" +
         "    - flatten folder modules.\n" +
         "    - replace extension: \`*.cjs\` -> \`*.js\`.\n" +
         "    - update \`require()\`s in all files.`\n",
@@ -126,11 +126,10 @@ module.exports = function(grunt) {
         {
             log_verbose_config(grunt, this);
 
-            throw new Error("not implemented: task " + TASK_SCREEPSIFY);
-            // TODO:
-            // cjs -> js
-            // flatten folders
-            // replace require paths
+            for (const file of this.files)
+            {
+
+            }
         });
     build_tasks.push(TASK_SCREEPSIFY);
     

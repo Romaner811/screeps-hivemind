@@ -43,7 +43,7 @@ Task and agenda oriented code for screeps world.
 - `force` - config flag, allow uploading a failed build.
 ##### build:
 - `build` - equivalent to all build tasks. "built" code is stored in `./dist/`.
-    - `screepsify`: rearrange the code for screeps ***!!! not-implemented !!!***
+    - `screepsify`: rearrange the code for screeps
         - flatten folder modules.
         - replace extension: `*.cjs` -> `*.js`.
         - update `require()`s in all files.

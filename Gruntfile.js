@@ -28,6 +28,7 @@ const CFGKEY_DRY = "is_dry";
 const CFGKEY_VERBOSE = "is_verbose";
 const CFGKEY_FORCE = "force";
 const CFGKEY_SCREEPS_BRANCH = TASK_UPLOAD + ".options.branch";
+const CFGKEY_SCREEPS_AUTH = "secret.screeps.auth";
 
 const FILE_SCREEPS_AUTH = "./screeps.auth.secret";
 
@@ -225,12 +226,6 @@ module.exports = function(grunt) {
         [CFGKEY_DRY]: false,
         [CFGKEY_VERBOSE]: false,
         [CFGKEY_FORCE]: false,
-        // secret
-        secret: {
-            screeps: {
-                auth: grunt.file.readJSON(FILE_SCREEPS_AUTH)
-            }
-        },
         // tasks
         [TASK_SCREEPSIFY]: {
             dist: {
@@ -292,7 +287,7 @@ module.exports = function(grunt) {
             grunt.task.run(build_tasks);
         });
 
-    grunt.task.registerTask(
+    grunt.task.registerMultiTask(
         TASK_SCREEPSIFY,
         "rearrange the code for screeps\n" +
         "    - flatten folder modules.\n" +
@@ -350,11 +345,16 @@ module.exports = function(grunt) {
         `also note: requires \`${FILE_SCREEPS_AUTH}\`.`,
         function()
         {
+            grunt.config.set(
+                CFGKEY_SCREEPS_AUTH,
+                grunt.file.readJSON(FILE_SCREEPS_AUTH)
+                );
+
             log_verbose_config(grunt, this);
             
             try
             {
-                grunt.task.requires(build_tasks);
+                grunt.task.requires(TASK_BUILD, ...build_tasks);
             }
             catch (error)
             {

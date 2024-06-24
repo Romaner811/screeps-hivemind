@@ -9,7 +9,7 @@ const BRANCH_MAIN = "default";
 const DEFAULT_BRANCH = BRANCH_DEV;
 
 const ARG_DELIM = ":";
-// config flags
+// config flags // todo: grunt.option
 const CFGTASK_DRY = "dry";
 const CFGTASK_VERBOSE = "verbose";
 const CFGTASK_FORCE = "force";
@@ -59,17 +59,15 @@ class Screepsify
 {
     /**
      * 
-     * @param {string} root_path 
+     * @param {string} source_root 
+     * @param {string} dest_root 
      * @param {boolean} verbose 
      */
-    constructor(root_path, verbose)
+    constructor(source_root, dest_root, verbose)
     {
-        if (root_path.endsWith(path.posix.sep) == false)
-        {
-            root_path = root_path + path.posix.sep;
-        }
-
-        this.root_path = root_path;
+        this.source_root = path.posix.normalize(source_root);
+        this.dest_root = path.posix.normalize(dest_root);
+        
         this.verbose = (verbose == true);
         this.known_modules = new Set();
     }
@@ -83,13 +81,15 @@ class Screepsify
     {
         let module_path = file_path;
 
-        if (module_path.startsWith(this.root_path))
+        module_path = path.posix.normalize(module_path);
+        
+        if (module_path.startsWith(this.dest_root))
         {
-            module_path = path.posix.relative(this.root_path, module_path);
+            module_path = path.posix.relative(this.dest_root, module_path);
         }
-        else if (module_path.startsWith(DIR_CURRECT_WORKING))
+        else if (module_path.startsWith(this.source_root))
         {
-            module_path = path.posix.relative(DIR_CURRECT_WORKING, module_path);
+            module_path = path.posix.relative(this.source_root, module_path);
         }
 
         let parsed = path.posix.parse(module_path);
@@ -113,13 +113,13 @@ class Screepsify
 
     #convert_module_unique(combined_module_unique)
     {
-        return combined_module_unique.replace(path.posix.sep, FLAT_PATH_DELIM);
+        return combined_module_unique.replaceAll(path.posix.sep, FLAT_PATH_DELIM);
     }
 
     #make_dest_file_path(converted_module_unique)
     {
-        return DIR_CURRECT_WORKING + path.posix.join(
-            this.root_path, converted_module_unique + ".js"
+        return path.posix.join(
+            this.dest_root, converted_module_unique + ".js"
             );
     }
 
@@ -166,19 +166,27 @@ class Screepsify
         {
             this.known_modules.add(this.extract_module_unique(file_path));
         }
+        
+        if (this.verbose)
+        {
+            console.log("known modules:", this.known_modules);
+        }
     }
     
     /**
      * replaces all known modules to their converted variants.
-     * @param {string} dest_file_path 
+     * @param {string} source_file 
      * @param {string} code 
      * @returns {{ dest_file: string, code: string }}
      */
-    convert(dest_file_path, code)
+    convert(source_file, code)
     {
         let context_unique = "";
-        let context_dir = path.posix.dirname(dest_file_path);
-        if (context_dir != this.root_path)
+        let context_dir = path.posix.dirname(source_file);
+        if (
+            (context_dir != this.source_root) ||
+            (context_dir != this.dest_root)
+        )
         {
             context_unique = this.extract_module_unique(context_dir);
         }
@@ -187,7 +195,7 @@ class Screepsify
 
         converted.dest_file = this.#make_dest_file_path(
             this.#convert_module_unique(
-                this.extract_module_unique(dest_file_path)
+                this.extract_module_unique(source_file)
                 )
             );
         
@@ -211,6 +219,10 @@ class Screepsify
             converted_match = this.#make_module_path(converted_match);
 
             converted.code = converted.code.replace(match, converted_match);
+            if (this.verbose)
+            {
+                console.log(`${source_file}: ${match} -> ${converted_match}`);
+            }
 
             done.add(module_unique);
         }
@@ -228,14 +240,9 @@ module.exports = function(grunt) {
         [CFGKEY_FORCE]: false,
         // tasks
         [TASK_SCREEPSIFY]: {
-            dist: {
-                files: [
-                    {
-                        src: [ DIR_SOURCE + "**" ],
-                        dest: DIR_SCREEPSIFIED_CODE,
-                        filter: "isFile"
-                    }
-                ]
+            options: {
+                src: DIR_SOURCE,
+                dest: DIR_SCREEPSIFIED_CODE
             }
         },
         [TASK_UPLOAD]: {
@@ -287,32 +294,44 @@ module.exports = function(grunt) {
             grunt.task.run(build_tasks);
         });
 
-    grunt.task.registerMultiTask(
+    grunt.task.registerTask(
         TASK_SCREEPSIFY,
         "rearrange the code for screeps\n" +
         "    - flatten folder modules.\n" +
         "    - replace extension: \`*.cjs\` -> \`*.js\`.\n" +
-        "    - update \`require()\`s in all files.`\n",
+        "    - update \`require()\`s in all files.`",
         function()
         {
             log_verbose_config(grunt, this);
 
+            const options = this.options();
+
             const helper = new Screepsify(
-                DIR_DIST,
+                options.src,
+                options.dest,
                 grunt.config.get(CFGKEY_VERBOSE)
             );
 
-            helper.load_modules(this.files.map((f) => f.dest));
+            const source_files = [ ];
+            grunt.file.recurse(
+                options.src,
+                function(abspath, rootdir, subdir, filename) {
+                    source_files.push(abspath);
+                }
+                );
 
-            for (const file_info of this.files)
+            helper.load_modules(source_files);
+
+            for (const source_file of source_files)
             {
-                let code = grunt.file.read(file_info.src);
+                let code = grunt.file.read(source_file);
                 
-                let converted = helper.convert(file_info.dest, code);
+                let converted = helper.convert(source_file, code);
 
                 grunt.file.write(converted.dest_file, converted.code);
                 
-                grunt.log.writeln(`file: ${file_info.src} -> ${converted.dest_file}`);
+                grunt.log.writeln(`${source_file}: written to: ${converted.dest_file}`);
+                grunt.log.writeln("");
             }
         });
     build_tasks.push(TASK_SCREEPSIFY);

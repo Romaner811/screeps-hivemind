@@ -1,5 +1,9 @@
 // https://docs.screeps.com/commit.html
 
+const { file } = require("grunt");
+const path = require("path");
+
+
 const BRANCH_DEV = "dev";
 const BRANCH_MAIN = "default";
 const DEFAULT_BRANCH = BRANCH_DEV;
@@ -16,6 +20,7 @@ const TASK_BUILD = "build";
 const TASK_SCREEPSIFY = "screepsify";
 // screeps
 const TASK_UPLOAD = "upload";
+const TASK_SCREEPS = "#___screeps___";
 // master
 const TASK_DEPLOY = "deploy";
 
@@ -40,6 +45,177 @@ function log_verbose_config(grunt, task)
     grunt.log.writeln(
         JSON.stringify(grunt.config.get(task.name), null, 4)
         );
+}
+
+
+const DIR_CURRECT_WORKING = "./";
+const FLAT_PATH_DELIM = "__";
+const MODULE_MAIN = "index";
+const REGEX_MODULE_PATH = /(?<=(?<quote>[\"\']))(?<dir>\.(?:\/[\w\.\-]+)*)\/(?<name>[\w\.\-]+)(?<ext>(?:\.c?js)?)(?=\k<quote>)/g;
+
+
+class Screepsify
+{
+    /**
+     * 
+     * @param {string} root_path 
+     * @param {boolean} verbose 
+     */
+    constructor(root_path, verbose)
+    {
+        if (root_path.endsWith(path.posix.sep) == false)
+        {
+            root_path = root_path + path.posix.sep;
+        }
+
+        this.root_path = root_path;
+        this.verbose = (verbose == true);
+        this.known_modules = new Set();
+    }
+
+    /**
+     * strips the path from any non-identifying features.
+     * @param {string} file_path f.e: `./dist/dir/subdir/index.js`
+     * @returns {string} f.e: `dir/subdir`
+     */
+    extract_module_unique(file_path)
+    {
+        let module_path = file_path;
+
+        if (module_path.startsWith(this.root_path))
+        {
+            module_path = path.posix.relative(this.root_path, module_path);
+        }
+        else if (module_path.startsWith(DIR_CURRECT_WORKING))
+        {
+            module_path = path.posix.relative(DIR_CURRECT_WORKING, module_path);
+        }
+
+        let parsed = path.posix.parse(module_path);
+
+        if (parsed.name == MODULE_MAIN)
+        {
+            module_path = parsed.dir;
+        }
+        else
+        {
+            module_path = path.posix.join(parsed.dir, parsed.name)
+        }
+
+        return module_path;
+    }
+
+    #combine_module_unique(context_path, module_path)
+    {
+        return path.posix.join(context_path, module_path);
+    }
+
+    #convert_module_unique(combined_module_unique)
+    {
+        return combined_module_unique.replace(path.posix.sep, FLAT_PATH_DELIM);
+    }
+
+    #make_dest_file_path(converted_module_unique)
+    {
+        return DIR_CURRECT_WORKING + path.posix.join(
+            this.root_path, converted_module_unique + ".js"
+            );
+    }
+
+    #make_module_path(converted_module_unique)
+    {
+        return DIR_CURRECT_WORKING + converted_module_unique;
+    }
+
+    //  "./src/dir/subdir/index.cjs"
+    //  vvv
+    //  "./dist/dir__subdir.js"
+    
+    //  @./*:
+    //  require("./dir/subdir/index.cjs");
+    //  require("./dir/subdir/index");
+    //  require("./dir/subdir");
+    //  @./dir/*:
+    //  require("./subdir/index.cjs");
+    //  require("./subdir/index");
+    //  require("./subdir");
+    //  @./dir/subdir/*:
+    //  require("./index");
+    //  require("./index.cjs");
+    //  vvv
+    //  @./*:
+    //  require("./dir__subdir");
+
+    //  "./src/dir/subdir/file_two.cjs"
+    //  vvv
+    //  "./dist/dir__subdir__file_two.js"
+    
+    //  require("./dir/subdir/file_two.cjs");
+    //  require("./file_two.cjs");
+    //  vvv
+    //  require("./dir__subdir__file_two");
+
+    /**
+     * get familiar with all those dest files as modules.
+     * @param {string[]} dest_files 
+     */
+    load_modules(dest_files)
+    {
+        for (const file_path of dest_files)
+        {
+            this.known_modules.add(this.extract_module_unique(file_path));
+        }
+    }
+    
+    /**
+     * replaces all known modules to their converted variants.
+     * @param {string} dest_file_path 
+     * @param {string} code 
+     * @returns {{ dest_file: string, code: string }}
+     */
+    convert(dest_file_path, code)
+    {
+        let context_unique = "";
+        let context_dir = path.posix.dirname(dest_file_path);
+        if (context_dir != this.root_path)
+        {
+            context_unique = this.extract_module_unique(context_dir);
+        }
+
+        let converted = { };
+
+        converted.dest_file = this.#make_dest_file_path(
+            this.#convert_module_unique(
+                this.extract_module_unique(dest_file_path)
+                )
+            );
+        
+        let done = new Set();
+        converted.code = code;
+        for (const [ match ] of code.matchAll(REGEX_MODULE_PATH))
+        {
+            let module_unique = this.extract_module_unique(match);
+            module_unique = this.#combine_module_unique(context_unique, module_unique);
+            
+            if (
+                done.has(module_unique) ||
+                (this.known_modules.has(module_unique) == false)
+            )
+            {
+                // skip paths that are irrelevant or already replaced.
+                continue;
+            }
+
+            let converted_match = this.#convert_module_unique(module_unique);
+            converted_match = this.#make_module_path(converted_match);
+
+            converted.code = converted.code.replace(match, converted_match);
+
+            done.add(module_unique);
+        }
+
+        return converted;
+    }
 }
 
 
@@ -83,7 +259,7 @@ module.exports = function(grunt) {
 
     grunt.task.registerTask(
         CFGTASK_DRY,
-        "config flag, make all tasks be verbose.",
+        "config flag, dont produce any side effcts.",
         function()
         {
             grunt.config.set(CFGKEY_DRY, true);
@@ -91,7 +267,7 @@ module.exports = function(grunt) {
 
     grunt.task.registerTask(
         CFGTASK_VERBOSE,
-        "config flag, dont produce any side effcts.",
+        "config flag, make all tasks be verbose.",
         function()
         {
             grunt.config.set(CFGKEY_VERBOSE, true);
@@ -126,9 +302,22 @@ module.exports = function(grunt) {
         {
             log_verbose_config(grunt, this);
 
-            for (const file of this.files)
-            {
+            const helper = new Screepsify(
+                DIR_DIST,
+                grunt.config.get(CFGKEY_VERBOSE)
+            );
 
+            helper.load_modules(this.files.map((f) => f.dest));
+
+            for (const file_info of this.files)
+            {
+                let code = grunt.file.read(file_info.src);
+                
+                let converted = helper.convert(file_info.dest, code);
+
+                grunt.file.write(converted.dest_file, converted.code);
+                
+                grunt.log.writeln(`file: ${file_info.src} -> ${converted.dest_file}`);
             }
         });
     build_tasks.push(TASK_SCREEPSIFY);
@@ -152,11 +341,13 @@ module.exports = function(grunt) {
         });
 
     grunt.task.loadNpmTasks("grunt-screeps");
+    grunt.task.renameTask("screeps", TASK_SCREEPS);
     grunt.task.registerTask(
         TASK_UPLOAD,
         `upload the code currently in \`${DIR_DIST}\` onto the set branch ` +
-        `(default: \`${DEFAULT_BRANCH}\`).` +
-        `note: requires \`${FILE_SCREEPS_AUTH}\`.`,
+        `(default: \`${DEFAULT_BRANCH}\`).\n` +
+        `note: use this instead of \`${TASK_SCREEPS}\` task.\n` +
+        `also note: requires \`${FILE_SCREEPS_AUTH}\`.`,
         function()
         {
             log_verbose_config(grunt, this);
@@ -186,7 +377,7 @@ module.exports = function(grunt) {
                 return;
             }
             
-            grunt.task.renameTask("screeps", TASK_UPLOAD);
+            grunt.task.renameTask(TASK_SCREEPS, TASK_UPLOAD);
             grunt.task.run(TASK_UPLOAD);
         });
 

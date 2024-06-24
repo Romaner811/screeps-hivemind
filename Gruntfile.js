@@ -207,7 +207,7 @@ class Screepsify
             let module_unique = this.extract_module_unique(match);
             module_unique = this.#combine_module_unique(context_unique, module_unique);
             
-            if (done.has(module_unique)) continue; // already replaced
+            if (done.has(match)) continue; // already replaced
             
             if (this.known_modules.has(module_unique) == false)
             {
@@ -228,7 +228,7 @@ class Screepsify
                 console.log(`${source_file}: ${match} -> ${converted_match}`);
             }
 
-            done.add(module_unique);
+            done.add(match);
         }
 
         return converted;

@@ -33,10 +33,9 @@ Task and agenda oriented code for screeps world.
 3. grunt will create a screepsified version at `./dist/` and upload it to the account specified in the secret file.
 
 ### Available tasks:
-> ##### note:
-> $ `grunt --help`
-> will print a more up-to-date version.
-> note: dont use `screeps` task directly, see `upload` instead.
+> **note:** `grunt --help` will print a more up-to-date version.
+
+> **note:** dont use `screeps` task directly, see `upload` instead.
 
 ##### flags:
 - `verbose` - config flag, make all tasks be verbose.

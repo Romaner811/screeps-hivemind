@@ -322,16 +322,24 @@ module.exports = function(grunt) {
 
             helper.load_modules(source_files);
 
+            const is_dry = grunt.config.get(CFGKEY_DRY);
+
             for (const source_file of source_files)
             {
                 let code = grunt.file.read(source_file);
                 
                 let converted = helper.convert(source_file, code);
 
-                grunt.file.write(converted.dest_file, converted.code);
+                if (is_dry != true)
+                {
+                    grunt.file.write(converted.dest_file, converted.code);
+                }
                 
-                grunt.log.writeln(`${source_file}: written to: ${converted.dest_file}`);
-                grunt.log.writeln("");
+                grunt.log.writeln(`${source_file}: written to ${converted.dest_file}`);
+                if (helper.verbose)
+                {
+                    grunt.log.writeln("");
+                }
             }
         });
     build_tasks.push(TASK_SCREEPSIFY);

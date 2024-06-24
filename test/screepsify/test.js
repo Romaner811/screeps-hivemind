@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const { execSync, exec } = require("child_process");
 
+// run: node test/screepsify/test.js
 
 const DIR_TMP = "tmp/";
 const DIR_SRC = "src/";

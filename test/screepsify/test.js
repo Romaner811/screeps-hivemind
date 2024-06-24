@@ -94,7 +94,7 @@ class ScreepsifyTest extends Test
         }
         catch (error)
         {
-            console.assert(false, `grunt failed: ${error.status}`);
+            throw new Error(`grunt failed: ${error.status}`);
         }
         
         try
@@ -103,7 +103,7 @@ class ScreepsifyTest extends Test
         }
         catch (error)
         {
-            console.assert(false, `diff: ${error.status} -> differences found.`);
+            throw new Error(`diff: ${error.status} -> differences found.`);
         }
     }
 

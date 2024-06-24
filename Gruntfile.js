@@ -50,7 +50,7 @@ function log_verbose_config(grunt, task)
 
 
 const DIR_CURRECT_WORKING = "./";
-const FLAT_PATH_DELIM = "__";
+const FLAT_PATH_DELIM = "#";
 const MODULE_MAIN = "index";
 const REGEX_MODULE_PATH = /(?<=(?<quote>[\"\']))(?<dir>\.(?:\/[\w\.\-]+)*)\/(?<name>[\w\.\-]+)(?<ext>(?:\.c?js)?)(?=\k<quote>)/g;
 

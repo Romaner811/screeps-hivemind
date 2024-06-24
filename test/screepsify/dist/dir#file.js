@@ -1,5 +1,5 @@
 
-const subdir = require("./dir__subdir");
+const subdir = require("./dir#subdir");
 
 function func_one()
 {

@@ -112,7 +112,7 @@ class ScreepsifyTest extends Test
         if (fs.existsSync(this.dir_test_env))
         {
             console.log(`deleting... ${this.dir_test_env}`);
-            fs.rmdirSync(this.dir_test_env, { recursive: true });
+            fs.rmSync(this.dir_test_env, { recursive: true });
         }
     }
 

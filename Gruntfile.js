@@ -182,9 +182,10 @@ class Screepsify
     convert(source_file, code)
     {
         let context_unique = "";
-        let context_dir = path.posix.dirname(source_file);
+        let context_dir = path.posix.dirname(source_file) + path.posix.sep;
+        
         if (
-            (context_dir != this.source_root) ||
+            (context_dir != this.source_root) &&
             (context_dir != this.dest_root)
         )
         {
@@ -206,11 +207,14 @@ class Screepsify
             let module_unique = this.extract_module_unique(match);
             module_unique = this.#combine_module_unique(context_unique, module_unique);
             
-            if (
-                done.has(module_unique) ||
-                (this.known_modules.has(module_unique) == false)
-            )
+            if (done.has(module_unique)) continue; // already replaced
+            
+            if (this.known_modules.has(module_unique) == false)
             {
+                if (this.verbose)
+                {
+                    console.log(`${source_file}: skipped ${module_unique}`);
+                }
                 // skip paths that are irrelevant or already replaced.
                 continue;
             }

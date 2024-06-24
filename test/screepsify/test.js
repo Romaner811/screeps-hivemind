@@ -1,6 +1,6 @@
 // todo:
 //  copy `./test/screepsify/src/` -> `./test/screepsify/tmp/src/`
-//  run $ `grunt --base=./test/screepsify/tmp screepsify`
+//  run $ `grunt --stack --base=./test/screepsify/tmp screepsify`
 //  compare all files
 //      - resulting at `./test/screepsify/tmp/dist/**`
 //      - with expected `./test/screepsify/dist/**`.

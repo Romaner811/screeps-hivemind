@@ -310,6 +310,8 @@ module.exports = function(grunt) {
 
             const options = this.options();
 
+            grunt.file.delete(options.dest);
+
             const helper = new Screepsify(
                 options.src,
                 options.dest,

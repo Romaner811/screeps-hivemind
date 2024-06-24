@@ -3,8 +3,8 @@ name: NodeJS with Grunt
 on:
   push:
     branches: [ "main", "dev" ]
-  pull_request:
-    branches: [ "main", "dev" ]
+#  pull_request:
+#    branches: [ "main", "dev" ]
 
 jobs:
   build:
@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x]
+        node-version: [ 18.x ]
 
     steps:
     - uses: actions/checkout@v4
@@ -22,7 +22,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: prepare screeps auth
+    - name: write secret - screeps auth
       run: |
         echo "{ \"email\": \"${{ secrets.SCREEPS_EMAIL }}\", \"token\": \"${{ secrets.SCREEPS_TOKEN }}\" }" > screeps.auth.secret
     
@@ -30,13 +30,14 @@ jobs:
       run: |
         npm install
         
-        branch=:${{ github.ref_name }}
-        if [ ${{ github.ref_name }} == "main" ]
+        # branch=${{ github.head_ref || github.ref_name }}
+        branch=${{ github.ref_name }}
+        if [ $branch == "main" ]
         then
-          branch=
+          branch=default
         fi
         
-        grunt --stack verbose deploy$branch
+        grunt --stack verbose deploy:$branch
 
     - name: cleanup secrets
       run: |

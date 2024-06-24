@@ -149,7 +149,7 @@ function perform_test(test)
     finally
     {
         console.log("cleanup...");
-        //#>test.cleanup();
+        test.cleanup();
         console.log("");
     }
 
